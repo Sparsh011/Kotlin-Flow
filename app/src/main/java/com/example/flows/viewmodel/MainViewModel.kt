@@ -22,9 +22,17 @@ class MainViewModel : ViewModel() {
 
 //    Position of init block is important, make sure it is at the correct place.
 
+    private val _stateFlow = MutableStateFlow(0)
+    val stateFlow = _stateFlow.asStateFlow()
+
+    fun incrementCounter(){
+        _stateFlow.value += 1
+    }
+
     init {
 //        collectFlow()
-        restaurant()
+//        restaurant()
+        flatMapConcat()
     }
 
     private fun restaurant(){
@@ -51,23 +59,43 @@ class MainViewModel : ViewModel() {
         }
     }
 
-    private fun collectFlow(){
-        val flow1 = flow {
-            emit(1)
-            delay(500L)
-            emit(2)
-        }
-
+    private fun flatMapConcat(){
         viewModelScope.launch {
+            val flow1 = flow {
+                emit(1)
+                emit(2)
+                emit(3)
+            }
+
             flow1.flatMapConcat { value ->
                 flow {
-                    emit(value + 1)
-                    delay(500L)
-                    emit(value + 2)
+                    emit(4)
+                    emit(5)
                 }
             }.collect{ value ->
-                println("The value is $value")
+                println("The value in FMC is $value")
+                if (value == 2){
+                    collectFlow1(flow1)
+                }
             }
+
+            flow1.collect{
+                println("Value in F1 is $it")
+            }
+        }
+    }
+
+    private fun collectFlow1(flow1: Flow<Int>) {
+        viewModelScope.launch {
+            flow1.collect(){
+                println("Value of Flow 1 after FMC : $it")
+            }
+        }
+    }
+
+    private fun collectFlow(){
+
+        viewModelScope.launch {
 
 
             countdownFlow
